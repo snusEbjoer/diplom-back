@@ -1,0 +1,86 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = "postgres://postgres:1112Wester@localhost:5432/diplomdb?schema=diplomdb&sslmode=prefer?connection_timeout=300"
+}
+
+enum Role {
+  agent
+  organizator
+  admin
+}
+
+model Users {
+  id              Int            @id @default(autoincrement())
+  fio             String
+  email           String
+  password        String
+  role            Role
+  organization_id Int
+  organization    Organization   @relation(fields: [organization_id], references: [id])
+  conversations   Conversation[]
+  messages        Message[]
+}
+
+enum From {
+  guest
+  agent
+}
+
+model Guest {
+  id            Int            @id @default(autoincrement())
+  username      String
+  email         String
+  conversations Conversation[]
+  messages      Message[]
+}
+
+model Conversation {
+  id       Int       @id @default(autoincrement())
+  agent_id Int
+  agent    Users     @relation(fields: [agent_id], references: [id])
+  guest_id Int
+  guest    Guest     @relation(fields: [guest_id], references: [id])
+  finished Boolean
+  messages Message[]
+}
+
+model Message {
+  id              Int          @id @default(autoincrement())
+  from            From
+  message_text    String
+  conversation_id Int
+  conversation    Conversation @relation(fields: [conversation_id], references: [id])
+  agent_id        Int
+  agent           Users        @relation(fields: [agent_id], references: [id])
+  guest_id        Int
+  guest           Guest        @relation(fields: [guest_id], references: [id])
+}
+
+model Organization {
+  id    Int     @id @default(autoincrement())
+  name String 
+  users Users[]
+  faq   Faq?
+}
+
+model Faq {
+  id             Int          @id @default(autoincrement())
+  orgaization_id Int          @unique
+  organization   Organization @relation(fields: [orgaization_id], references: [id])
+  qas            Qa[]
+}
+
+model Qa {
+  id            Int    @id @default(autoincrement())
+  question_text String
+  answer_text   String
+  faq_id        Int
+  faq           Faq    @relation(fields: [faq_id], references: [id])
+}
