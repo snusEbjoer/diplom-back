@@ -4,8 +4,8 @@ import { UpdateGuestDto } from './dto/update-guest.dto';
 
 @Injectable()
 export class GuestService {
-  create(createGuestDto: CreateGuestDto) {
-    return 'This action adds a new guest';
+  async create(createGuestDto: CreateGuestDto) {
+    return await 'This action adds a new guest';
   }
 
   findAll() {
