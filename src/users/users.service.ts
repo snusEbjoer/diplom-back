@@ -1,4 +1,4 @@
-import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
+import { Body, HttpException, HttpStatus, Injectable } from '@nestjs/common';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { PrismaService } from 'nestjs-prisma';
@@ -8,29 +8,21 @@ import { AuthService } from 'src/auth/auth.service';
 import { JwtAuthGuard } from 'src/auth/auth.guard';
 import { User } from 'src/common/user.decorator';
 import { UserEntity } from './entities/user.entity';
+import { OrganizationService } from 'src/organization/organization.service';
+import { CreateOrganizationDto } from 'src/organization/dto/create-organization.dto';
 
 
 @Injectable()
 export class UsersService {
   constructor(private readonly prisma: PrismaService) { }
-  async createUser(createUserDto: CreateUserDto) {
-    return await this.prisma.users.create({data: {
-      ...createUserDto,
-      role: 'organizator',
-      organization: {create:{
-        name: 'jopa'
-      }}
-    }});
-  }
+  
 
-  async createAgent(createAgentDto: CreateAgentDto, @User() user: UserEntity) {
+  async createAgent(createAgentDto: CreateAgentDto, user: UserEntity) {
     
     return await this.prisma.users.create({data: {
       ...createAgentDto,
       role: 'agent',
-      organization: {create:{
-        name: 'jopa'
-      }}
+      organization_id: user.organization_id
     }});
   }
 

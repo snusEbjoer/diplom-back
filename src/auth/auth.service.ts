@@ -3,6 +3,7 @@ import { UsersService } from '../users/users.service';
 import * as bcrypt from 'bcrypt';
 import { JwtService } from '@nestjs/jwt';
 import { PrismaService } from 'nestjs-prisma';
+import { CreateUserDto } from 'src/users/dto/create-user.dto';
 
 @Injectable()
 export class AuthService {
@@ -23,6 +24,17 @@ export class AuthService {
         expiresIn: "1d"
       })
     };
+  }
+  async createUser(createUserDto: CreateUserDto) {
+    return await this.prisma.users.create({data: {
+      email:createUserDto.email,
+      fio:createUserDto.fio,
+      password:createUserDto.password,
+      role: 'organizator',
+      organization: {create:{
+        name: createUserDto.name
+      }}
+    }});
   }
   async validate(userId: number) {
     return await this.prisma.users.findUnique({where: {id: userId}})

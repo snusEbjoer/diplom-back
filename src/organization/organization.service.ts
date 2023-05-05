@@ -1,7 +1,8 @@
-import { Injectable } from '@nestjs/common';
+import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
 import { CreateOrganizationDto } from './dto/create-organization.dto';
 import { UpdateOrganizationDto } from './dto/update-organization.dto';
 import { PrismaService } from 'nestjs-prisma';
+import { Organization } from '@prisma/client';
 
 @Injectable()
 export class OrganizationService {
@@ -15,8 +16,12 @@ export class OrganizationService {
     return `This action returns all organization`;
   }
 
-  findOne(id: number) {
-    return `This action returns a #${id} organization`;
+  async findOne(id: number): Promise<Organization> {
+    const organization = await this.prisma.organization.findFirst({ where: { id } })
+    if (!organization){
+      throw new HttpException('organization not found', HttpStatus.NOT_FOUND)
+    }
+    return organization
   }
 
   update(id: number, updateOrganizationDto: UpdateOrganizationDto) {

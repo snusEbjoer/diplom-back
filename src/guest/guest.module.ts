@@ -1,8 +1,9 @@
 import { Module } from '@nestjs/common';
 import { GuestService } from './guest.service';
-import { GuestGateway } from './guest.gateway';
+import { GuestController } from './guest.controller';
 
 @Module({
-  providers: [GuestGateway, GuestService]
+  controllers: [GuestController],
+  providers: [GuestService]
 })
 export class GuestModule {}

@@ -3,10 +3,14 @@ import { AuthService } from './auth.service';
 import { Users } from '@prisma/client';
 import * as bcrypt from 'bcrypt';
 import { UsersService } from 'src/users/users.service';
+import { User } from 'src/common/user.decorator';
+import { CreateAgentDto } from 'src/users/dto/create-agent.dto';
+import { UserEntity } from 'src/users/entities/user.entity';
+import { CreateUserDto } from 'src/users/dto/create-user.dto';
 
 @Controller('auth')
 export class AuthController {
-  constructor(private authService: AuthService, private usersService: UsersService) {}
+  constructor(private authService: AuthService) {}
 
   @HttpCode(HttpStatus.OK)
   @Post('login')
@@ -15,23 +19,21 @@ export class AuthController {
   }
   @Post('/signup')
     async createUser(
-        @Body('password') password: string,
-        @Body('email') email: string,
-        @Body('fio') fio: string,
+        @Body() {password, fio, email, name}: CreateUserDto
     ): Promise<Users> {
         const saltOrRounds = 10;
         const hashedPassword = await bcrypt.hash(password, saltOrRounds);
-        const result = await this.usersService.createUser({
+        const result = await this.authService.createUser({
             fio,
             email,
             password:hashedPassword,
+            name
         }
         );
         return result;
     }
-    
     @Get()
     async validate(@Body('id') id: number) {
-      return await this.authService.validate(id)
+      return await this.authService.validate(+id)
     }
 }
