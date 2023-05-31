@@ -36,7 +36,6 @@ enum From {
 model Guest {
   id            Int            @id @default(autoincrement())
   username      String
-  email         String
   conversations Conversation[]
   messages      Message[]
 }
@@ -83,4 +82,10 @@ model Qa {
   answer_text   String
   faq_id        Int
   faq           Faq    @relation(fields: [faq_id], references: [id])
+}
+
+model ChatRoom {
+  roomId Int @id @default(autoincrement())
+  name String
+  users Int?
 }

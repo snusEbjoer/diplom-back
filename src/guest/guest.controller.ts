@@ -7,7 +7,7 @@ import { UpdateGuestDto } from './dto/update-guest.dto';
 export class GuestController {
   constructor(private readonly guestService: GuestService) {}
 
-  @Post()
+  @Post('createGuest')
   create(@Body() createGuestDto: CreateGuestDto) {
     return this.guestService.create(createGuestDto);
   }

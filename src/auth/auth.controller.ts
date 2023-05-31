@@ -15,7 +15,7 @@ export class AuthController {
   @HttpCode(HttpStatus.OK)
   @Post('login')
   async signIn(@Body() signInDto: Record<string, any>) {
-    return await this.authService.signIn(signInDto.email, signInDto.password);
+    return await this.authService.login(signInDto.email, signInDto.password);
   }
   @Post('/signup')
     async createUser(
@@ -34,6 +34,6 @@ export class AuthController {
     }
     @Get()
     async validate(@Body('id') id: number) {
-      return await this.authService.validate(+id)
+      return await this.authService.validate(id)
     }
 }

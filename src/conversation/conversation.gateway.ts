@@ -1,71 +1,56 @@
-import { Injectable } from '@nestjs/common';
-import { CreateConversationDto } from './dto/create-conversation.dto';
-import { UpdateConversationDto } from './dto/update-conversation.dto';
-import { WebSocketGateway, WebSocketServer, SubscribeMessage, OnGatewayInit } from '@nestjs/websockets';
-import { Server, Socket } from 'socket.io';
+import { WebSocketGateway, WebSocketServer, SubscribeMessage, MessageBody } from '@nestjs/websockets';
 import { PrismaService } from 'nestjs-prisma';
+import { Server, Socket } from 'socket.io';
+import { CreateConversationDto } from './dto/create-conversation.dto';
+import { CreateGuestDto } from 'src/guest/dto/create-guest.dto';
 
-interface ChatRoom {
-  roomId: string;
-  users: number;
-}
 
-@Injectable()
-@WebSocketGateway()
-export class ConversationGateway implements OnGatewayInit {
+
+@WebSocketGateway({ cors: '*:*' })
+export class ConversationGateway {
   constructor(private readonly prisma: PrismaService) { }
-  @WebSocketServer() server: Server;
+  private rooms = new Map<string, CreateConversationDto>();
 
-  private activeSockets: { [key: string]: Socket } = {};
-  private chatRooms: ChatRoom[] = [];
+  @WebSocketServer()
+  server: Server;
 
-  afterInit(server: any) {
-    console.log('WebSocket server initialized');
-  }
-
-  handleConnection(socket: Socket) {
-    console.log(`Client connected: ${socket.id}`);
-    this.activeSockets[socket.id] = socket;
-    socket.emit('rooms', this.chatRooms);
-  }
-
-  handleDisconnect(socket: Socket) {
-    console.log(`Client disconnected: ${socket.id}`);
-    delete this.activeSockets[socket.id];
-  }
   
-  @SubscribeMessage('join')
-  handleJoinChat(client: Socket, roomId: string) {
-    const room = this.chatRooms.find((r) => r.roomId === roomId);
-    if (!room) {
-      this.chatRooms.push({ roomId, users: 1 });
-    } else if (room.users === 2) {
-      client.emit('full');
-      return;
-    } else {
-      room.users += 1;
-    }
-    client.join(roomId);
-    this.server.to(roomId).emit('users', room.users);
-  }
-
-  @SubscribeMessage('leave')
-  handleLeaveChat(client: Socket, roomId: string) {
-    const room = this.chatRooms.find((r) => r.roomId === roomId);
-    if (room) {
-      if (room.users === 1) {
-        this.chatRooms = this.chatRooms.filter((r) => r.roomId !== roomId);
-      } else {
-        room.users -= 1;
-      }
-      client.leave(roomId);
-      this.server.to(roomId).emit('users', room.users);
-    }
+  @SubscribeMessage('sendMessage')
+  handleNewMessage(@MessageBody() data: any) {
+    // Broadcast a message to all users in the same room
+    const room = this.getRoom(data.roomId);
+    this.server.to(data.roomId).emit('newMessage', { user: data.user, message: data.message, room: room });
   }
 
   @SubscribeMessage('message')
-  handleMessage(client: Socket, payload: any): void {
-    const roomId = payload.roomId;
-    this.server.to(roomId).emit('message', payload);
+  handleMessage(@MessageBody() message: string): void {
+    this.server.emit('message', message);
+  }
+
+  @SubscribeMessage('createRoom')
+  async handleCreateRoom(@MessageBody() data: CreateConversationDto, client:Socket) {
+    // Create a new room
+    const room = await this.prisma.conversation.create({data: {
+      agent_id:data.agent_id,
+      guest_id:data.guest_id,
+      finished:data.finished
+    }});
+    this.server.emit('roomCreated', room);
+  }
+  @SubscribeMessage('createGuest')
+  async handleCreateGuest(@MessageBody() data: CreateGuestDto) {
+    const guest = await this.prisma.guest.create({data:{
+      ...data
+    }})
+    console.log(guest)
+    this.server.emit('guestCreated', guest)
+  }
+  
+  getRoom(roomId: string): CreateConversationDto {
+    return this.rooms.get(roomId);
+  }
+
+  getAllRooms(): CreateConversationDto[] {
+    return Array.from(this.rooms.values());
   }
 }

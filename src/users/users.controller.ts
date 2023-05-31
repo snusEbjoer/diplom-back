@@ -15,17 +15,14 @@ export class UsersController {
   @UseGuards(JwtAuthGuard)
   @Post('createAgent')
     createAgent(@Body() createAgentDto: CreateAgentDto, @User() user: UserEntity) {
+      console.log('created')
       return this.usersService.createAgent(createAgentDto, user);
     }
-
-  @Get()
-  findAll() {
-    return this.usersService.findAll();
-  }
   @UseGuards(JwtAuthGuard)
-  @Get(':email')
-  async findOne(@Param('email') email: string) {
-    return await this.usersService.findOne(email);
+  @Get('agents')
+  findAll(@User() user:UserEntity) {
+    console.log(user)
+    return this.usersService.findAll(user.organization_id);
   }
 
   @Patch(':id')
